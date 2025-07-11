@@ -35,6 +35,7 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
     endpoint_description: "",
     description: "",
     request_body: "",
+    request_body_schema: "",
     response_body: "",
     path_parameters: [] as PathParameter[],
     accessToken: "required" as const,
@@ -50,7 +51,7 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
     }
   }
 
-  const handleJsonChange = (field: 'request_body' | 'response_body', value: string) => {
+  const handleJsonChange = (field: 'request_body' | 'response_body' | 'request_body_schema', value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }))
@@ -104,7 +105,13 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
         newErrors.request_body = "Invalid JSON format"
       }
     }
-
+    if (formData.request_body_schema.trim()) {
+      try {
+        JSON.parse(formData.request_body_schema)
+      } catch {
+        newErrors.request_body_schema = "Invalid JSON format"
+      }
+    }
     if (formData.response_body.trim()) {
       try {
         JSON.parse(formData.response_body)
@@ -127,6 +134,7 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
       const apiData = {
         ...formData,
         request_body: formData.request_body.trim() ? JSON.parse(formData.request_body) : undefined,
+        request_body_schema: formData.request_body_schema.trim() ? JSON.parse(formData.request_body_schema) : undefined,
         response_body: formData.response_body.trim() ? JSON.parse(formData.response_body) : undefined,
       }
 
@@ -146,6 +154,7 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
           endpoint_description: "",
           description: "",
           request_body: "",
+          request_body_schema: "",
           response_body: "",
           path_parameters: [],
           accessToken: "required",
@@ -189,7 +198,7 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
                   value={formData._id}
                   onChange={(e) => handleInputChange('_id', e.target.value)}
                   className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., update-batch-job"
+                  placeholder="e.g., 001"
                 />
                 {errors._id && <p className="text-red-400 text-sm mt-1">{errors._id}</p>}
               </div>
@@ -201,7 +210,7 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Speech API"
+                  placeholder="e.g., AUTH"
                 />
                 {errors.title && <p className="text-red-400 text-sm mt-1">{errors.title}</p>}
               </div>
@@ -331,9 +340,18 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
                   onChange={(e) => handleJsonChange('request_body', e.target.value)}
                   rows={8}
                   className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                  placeholder='{\n  "key": "value"\n}'
+                  placeholder='{"key": "value"}'
                 />
                 {errors.request_body && <p className="text-red-400 text-sm mt-1">{errors.request_body}</p>}
+                <label className="block text-sm font-medium text-zinc-300 mb-2 mt-4">Request Body Schema (JSON Schema)</label>
+                <textarea
+                  value={formData.request_body_schema}
+                  onChange={(e) => handleJsonChange('request_body_schema', e.target.value)}
+                  rows={8}
+                  className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  placeholder='{"type": "object", "properties": { ... }}'
+                />
+                {errors.request_body_schema && <p className="text-red-400 text-sm mt-1">{errors.request_body_schema}</p>}
               </div>
 
               <div>

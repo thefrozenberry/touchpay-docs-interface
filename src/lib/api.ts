@@ -1,4 +1,5 @@
-const API_BASE_URL = 'https://popcorn.touchpay.one';
+// export const API_BASE_URL = 'http://localhost:5000';
+export const API_BASE_URL = 'https://popcorn.touchpay.one';
 
 export interface ApiItem {
   _id: string;
@@ -25,6 +26,7 @@ export interface ApiDoc {
   endpoint_description: string;
   description: string;
   request_body: any;
+  request_body_schema?: any;
   response_body: any;
   path_parameters: Array<{
     name: string;

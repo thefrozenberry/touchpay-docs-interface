@@ -1,16 +1,20 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+
 import { Card } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Copy, Info, Check, Shield, Database, Zap, Users, CreditCard, FileText, Settings } from "lucide-react"
+import { Copy, Info, Check, Shield, Database, Zap, Users, CreditCard, FileText, Settings, Trash2 } from "lucide-react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Header } from "@/components/header"
 import { MobileRestriction } from "@/components/mobile-restriction"
 import { useEffect, useState } from "react"
-import { fetchApiDoc, type ApiDoc } from "@/lib/api"
+import { fetchApiDoc, type ApiDoc, API_BASE_URL } from "@/lib/api"
+
+type StatusCode = {
+  code: number;
+  label: string;
+  meaning: string;
+  description: string;
+};
 
 // Skeleton Loading Component
 function ContentSkeleton() {
@@ -95,16 +99,23 @@ export default function Home() {
   const [copiedJson, setCopiedJson] = useState(false)
   const [copiedCurl, setCopiedCurl] = useState(false)
   const [sidebarRefreshTrigger, setSidebarRefreshTrigger] = useState(0)
+  const [showStatusCodes, setShowStatusCodes] = useState(false);
+  const [statusCodes, setStatusCodes] = useState<StatusCode[]>([]);
+  const [loadingStatusCodes, setLoadingStatusCodes] = useState(false);
 
   const handleApiSelect = async (apiId: string) => {
+    console.log('handleApiSelect called with:', apiId);
     setSelectedApiId(apiId)
     setIsGetStartedOpen(false)
+    setShowStatusCodes(false)
     setLoading(true)
     try {
       const apiDoc = await fetchApiDoc(apiId)
+      console.log('Fetched API doc:', apiDoc);
       setSelectedApi(apiDoc)
     } catch (error) {
       console.error('Failed to fetch API documentation:', error)
+      setSelectedApi(null)
     } finally {
       setLoading(false)
     }
@@ -114,6 +125,7 @@ export default function Home() {
     setSelectedApi(null)
     setSelectedApiId(null)
     setIsGetStartedOpen(true)
+    setShowStatusCodes(false)
   }
 
   const handleContributeSuccess = () => {
@@ -125,6 +137,37 @@ export default function Home() {
       handleApiSelect(selectedApiId)
     }
   }
+
+  const handleStatusCodesClick = async () => {
+    setShowStatusCodes(true);
+    setIsGetStartedOpen(false);
+    setSelectedApi(null);
+    setSelectedApiId(null);
+    setLoadingStatusCodes(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/docs/status-codes`);
+      const data = await res.json();
+      setStatusCodes(data);
+    } catch (e) {
+      setStatusCodes([]);
+    } finally {
+      setLoadingStatusCodes(false);
+    }
+  };
+
+  const handleDeleteApi = async () => {
+    if (!selectedApi?._id) return;
+    if (!window.confirm("Are you sure you want to delete this API? This action cannot be undone.")) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/docs/${selectedApi._id}`, { method: "DELETE" });
+      setSelectedApi(null);
+      setSelectedApiId(null);
+      setIsGetStartedOpen(true);
+      setSidebarRefreshTrigger(prev => prev + 1);
+    } catch (e) {
+      alert("Failed to delete API.");
+    }
+  };
 
   const copyToClipboard = async (text: string, setCopied: (value: boolean) => void) => {
     try {
@@ -164,31 +207,121 @@ export default function Home() {
         onGetStartedClick={handleGetStartedClick}
         isGetStartedOpen={isGetStartedOpen}
         refreshTrigger={sidebarRefreshTrigger}
+        onStatusCodesClick={handleStatusCodesClick}
       />
 
       {/* Main Content with left margin for fixed sidebar */}
-      <div className="flex-1 ml-64 p-8 pl-20 pt-10" style={{ backgroundColor: "#0D0E0F" }}>
-        {loading ? (
-          <ContentSkeleton />
-        ) : selectedApi ? (
-          <div className="max-w-4xl">
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-white mb-4">
-                {currentContent.api_title}
-              </h1>
-              <div className="text-zinc-400 text-sm leading-relaxed">
-                {currentContent.description.split('\n').map((paragraph, index) => (
-                  <p key={index} className="mb-4 last:mb-0">
-                    {paragraph}
-                  </p>
-                ))}
+      <div className="flex-1 ml-64 p-8 pt-10" style={{ backgroundColor: "#0D0E0F" }}>
+        {showStatusCodes ? (
+          <div className="max-w-2xl mx-auto">
+            <h1 className="text-2xl font-bold text-white mb-6 text-left">HTTP Status Codes</h1>
+            {loadingStatusCodes ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-800">Code</th>
+                      <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-800">Label</th>
+                      <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-800">Meaning</th>
+                      <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-800">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...Array(8)].map((_, idx) => (
+                      <tr key={idx} className={
+                        "transition-colors " +
+                        (idx % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800")
+                      }>
+                        <td className="px-3 py-2">
+                          <div className="h-5 w-10 bg-zinc-700 rounded animate-pulse"></div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="h-5 w-20 bg-zinc-700 rounded animate-pulse"></div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="h-5 w-24 bg-zinc-700 rounded animate-pulse"></div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="h-5 w-40 bg-zinc-700 rounded animate-pulse"></div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-800">Code</th>
+                      <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-800">Label</th>
+                      <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-800">Meaning</th>
+                      <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-800">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {statusCodes.map((sc, idx) => (
+                      <tr
+                        key={sc.code}
+                        className={
+                          "transition-colors hover:bg-zinc-800 " +
+                          (idx % 2 === 0 ? "bg-zinc-900" : "bg-zinc-800")
+                        }
+                      >
+                        <td className="px-3 py-2">
+                          <span
+                            className={
+                              "inline-block px-2 py-0.5 rounded text-xs font-semibold " +
+                              (sc.code >= 200 && sc.code < 300
+                                ? "bg-green-600 text-white"
+                                : sc.code >= 400 && sc.code < 500
+                                ? "bg-yellow-500 text-zinc-900"
+                                : sc.code >= 500
+                                ? "bg-red-600 text-white"
+                                : "bg-zinc-700 text-zinc-200")
+                            }
+                          >
+                            {sc.code}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-sm text-white font-medium">{sc.label}</td>
+                        <td className="px-3 py-2 text-sm text-indigo-400">{sc.meaning}</td>
+                        <td className="px-3 py-2 text-sm text-zinc-300">{sc.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : selectedApi ? (
+          <div className="max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="mb-8 flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-white mb-4">
+                  {selectedApi.api_title}
+                </h1>
+                <div className="text-zinc-400 text-sm leading-relaxed">
+                  {selectedApi.description.split('\n').map((paragraph, index) => (
+                    <p key={index} className="mb-4 last:mb-0">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={handleDeleteApi}
+                title="Delete API"
+                className="mt-1 p-2 rounded-full bg-transparent hover:bg-red-600/20 text-zinc-400 hover:text-red-600 transition-colors"
+              >
+                <Trash2 className="w-6 h-6" />
+              </button>
             </div>
-
-            {/* End points section */}
+            {/* Endpoint Section */}
             <div className="mb-8">
-              <h2 className="text-xl font-semibold text-white mb-4">End point</h2>
+              <h2 className="text-xl font-semibold text-white mb-4">Endpoint</h2>
               <div className="text-zinc-400 text-sm mb-6">
                 {selectedApi.endpoint_description.split('\n').map((paragraph, index) => (
                   <p key={index} className="mb-2 last:mb-0">
@@ -196,227 +329,61 @@ export default function Home() {
                   </p>
                 ))}
               </div>
-
-              {/* API Endpoint */}
               <div className="bg-zinc-800 rounded-lg p-4 mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Badge variant="secondary" className="bg-zinc-600 text-white hover:bg-zinc-700">
+                  <span className="bg-zinc-600 text-white px-3 py-1 rounded font-mono text-sm">
                     {selectedApi.method}
-                  </Badge>
+                  </span>
                   <code className="text-zinc-300 font-mono">{selectedApi.endpoint}</code>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-zinc-400 hover:text-white relative"
-                  onClick={() => copyToClipboard(selectedApi.endpoint, setCopiedEndpoint)}
-                >
-                  {copiedEndpoint ? (
-                    <Check className="h-4 w-4 text-green-400" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                  {copiedEndpoint && (
-                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap animate-bounce">
-                      Copied!
-                    </div>
-                  )}
-                </Button>
               </div>
             </div>
-
             {/* Request Body */}
             {selectedApi.request_body && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-white mb-4">Request Body</h3>
-
-                <Tabs defaultValue="json" className="w-full">
-                  <TabsList className="bg-zinc-800 border-zinc-700">
-                    <TabsTrigger value="json" className="data-[state=active]:bg-zinc-700">
-                      json
-                    </TabsTrigger>
-                    <TabsTrigger value="curl" className="data-[state=active]:bg-zinc-700">
-                      cURL
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="json" className="mt-4">
-                    <div className="relative">
-                      <Badge className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700">JSON</Badge>
-                      <Card className="bg-zinc-800 border-zinc-700 p-0">
-                        <div className="p-6">
-                          <pre className="text-sm text-zinc-300 font-mono leading-relaxed">
-                            <div className="flex">
-                              <div className="text-zinc-500 select-none w-8 text-right mr-4 flex-shrink-0">
-                                {JSON.stringify(selectedApi.request_body, null, 2).split('\n').map((_, i) => (
-                                  <div key={i + 1}>{i + 1}</div>
-                                ))}
-                              </div>
-                              <div className="flex-1 overflow-x-auto">
-                                {JSON.stringify(selectedApi.request_body, null, 2).split('\n').map((line, index) => {
-                                  // Apply syntax highlighting to JSON
-                                  const highlightedLine = line.replace(
-                                    /(".*?"):\s*([^,\s]+)/g,
-                                    '<span class="text-orange-400">$1</span>: <span class="text-orange-400">$2</span>'
-                                  ).replace(
-                                    /(".*?"):\s*(".*?")/g,
-                                    '<span class="text-blue-400">$1</span>: <span class="text-blue-400">$2</span>'
-                                  );
-                                  
-                                  return (
-                                    <div 
-                                      key={index} 
-                                      dangerouslySetInnerHTML={{ __html: highlightedLine }}
-                                      className="whitespace-pre"
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </pre>
-                        </div>
-                      </Card>
-                      <div className="absolute top-4 left-4 flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-zinc-400 hover:text-white p-1 relative"
-                          onClick={() => copyToClipboard(JSON.stringify(selectedApi.request_body, null, 2), setCopiedJson)}
-                        >
-                          {copiedJson ? (
-                            <Check className="h-4 w-4 text-green-400" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                          {copiedJson && (
-                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap animate-bounce">
-                              Copied!
-                            </div>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="curl" className="mt-4">
-                    <Card className="bg-zinc-800 border-zinc-700">
-                      <div className="p-6">
-                        <pre className="text-sm text-zinc-300 font-mono">
-                          <span className="text-blue-400">curl</span> -X <span className="text-green-400">{selectedApi.method}</span> <span className="text-blue-400">https://core.touchpay.one</span><span className="text-green-400">{selectedApi.endpoint}</span>
-                        </pre>
-                      </div>
-                    </Card>
-                    <div className="mt-2 flex justify-end">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-zinc-400 hover:text-white relative"
-                        onClick={() => copyToClipboard(`curl -X ${selectedApi.method} https://core.touchpay.one${selectedApi.endpoint}`, setCopiedCurl)}
-                      >
-                        {copiedCurl ? (
-                          <Check className="h-4 w-4 text-green-400" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                        {copiedCurl && (
-                          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap animate-bounce">
-                            Copied!
-                          </div>
-                        )}
-                      </Button>
-                    </div>
-                  </TabsContent>
-                </Tabs>
+                <pre className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-zinc-300 font-mono overflow-x-auto">
+                  {JSON.stringify(selectedApi.request_body, null, 2)}
+                </pre>
               </div>
             )}
-
             {/* Response Body */}
             {selectedApi.response_body && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-white mb-4">Response Body</h3>
-                <Card className="bg-zinc-800 border-zinc-700">
-                  <div className="p-6">
-                    <pre className="text-sm text-zinc-300 font-mono leading-relaxed">
-                      <div className="flex">
-                        <div className="text-zinc-500 select-none w-8 text-right mr-4 flex-shrink-0">
-                          {JSON.stringify(selectedApi.response_body, null, 2).split('\n').map((_, i) => (
-                            <div key={i + 1}>{i + 1}</div>
-                          ))}
-                        </div>
-                        <div className="flex-1 overflow-x-auto">
-                          {JSON.stringify(selectedApi.response_body, null, 2).split('\n').map((line, index) => (
-                            <div key={index} className="text-green-400 whitespace-pre">{line}</div>
-                          ))}
-                        </div>
-                      </div>
-                    </pre>
-                  </div>
-                </Card>
+                <pre className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-green-400 font-mono overflow-x-auto">
+                  {JSON.stringify(selectedApi.response_body, null, 2)}
+                </pre>
               </div>
             )}
-
             {/* Path Parameters */}
             {selectedApi.path_parameters && selectedApi.path_parameters.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">Path Parameters</h3>
-                <Card className="bg-zinc-800 border-zinc-700">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-zinc-700 hover:bg-zinc-800">
-                        <TableHead className="text-zinc-300">Parameter</TableHead>
-                        <TableHead className="text-zinc-300">Type</TableHead>
-                        <TableHead className="text-zinc-300">Required</TableHead>
-                        <TableHead className="text-zinc-300">Description</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedApi.path_parameters.map((param, index) => (
-                        <TableRow key={index} className="border-zinc-700 hover:bg-zinc-750">
-                          <TableCell>
-                            <code className="bg-zinc-700 px-2 py-1 rounded text-sm text-zinc-300">{param.name}</code>
-                          </TableCell>
-                          <TableCell className="text-green-400">{param.type}</TableCell>
-                          <TableCell className="text-zinc-300">{param.required ? "yes" : "no"}</TableCell>
-                          <TableCell className="text-zinc-400">{param.description}</TableCell>
-                        </TableRow>
+                <div className="bg-zinc-800 border-zinc-700 rounded-lg p-4">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Name</th>
+                        <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Type</th>
+                        <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Required</th>
+                        <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedApi.path_parameters.map((param, idx) => (
+                        <tr key={idx} className="transition-colors hover:bg-zinc-700">
+                          <td className="px-3 py-2 text-sm text-white">{param.name}</td>
+                          <td className="px-3 py-2 text-sm text-zinc-300">{param.type}</td>
+                          <td className="px-3 py-2 text-sm text-zinc-300">{param.required ? "Yes" : "No"}</td>
+                          <td className="px-3 py-2 text-sm text-zinc-300">{param.description}</td>
+                        </tr>
                       ))}
-                    </TableBody>
-                  </Table>
-                </Card>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
-
-            {/* Token and Role Section */}
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold text-white mb-4">Token and Role</h3>
-              <Card className="bg-zinc-800 border-zinc-700">
-                <div className="p-6">
-                  <pre className="text-sm text-zinc-300 font-mono leading-relaxed">
-                    <div className="flex">
-                      <div className="text-zinc-500 select-none w-8 text-right mr-4">
-                        {Array.from({ length: 4 }, (_, i) => (
-                          <div key={i + 1}>{i + 1}</div>
-                        ))}
-                      </div>
-                      <div className="flex-1">
-                        <div>{"{"}</div>
-                        <div>
-                          {" "}
-                          <span className="text-blue-400">"accessToken"</span>:{" "}
-                          <span className="text-orange-400">"{selectedApi.accessToken || ""}"</span>,
-                        </div>
-                        <div>
-                          {" "}
-                          <span className="text-blue-400">"accessRole"</span>:{" "}
-                          <span className="text-orange-400">"{selectedApi.accessRole || ""}"</span>
-                        </div>
-                        <div>{"}"}</div>
-                      </div>
-                    </div>
-                  </pre>
-                </div>
-              </Card>
-            </div>
           </div>
         ) : (
           <div className="max-w-6xl">

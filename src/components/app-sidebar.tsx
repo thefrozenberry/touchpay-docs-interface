@@ -10,9 +10,10 @@ interface AppSidebarProps {
   onGetStartedClick?: () => void;
   isGetStartedOpen?: boolean;
   refreshTrigger?: number; // Add this to trigger sidebar refresh
+  onStatusCodesClick?: () => void; // New prop for status codes
 }
 
-export function AppSidebar({ onApiSelect, selectedApiId, onGetStartedClick, isGetStartedOpen, refreshTrigger }: AppSidebarProps) {
+export function AppSidebar({ onApiSelect, selectedApiId, onGetStartedClick, isGetStartedOpen, refreshTrigger, onStatusCodesClick }: AppSidebarProps) {
   const [sidebarData, setSidebarData] = useState<SidebarItem[]>([])
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
@@ -117,6 +118,12 @@ export function AppSidebar({ onApiSelect, selectedApiId, onGetStartedClick, isGe
                 onClick={onGetStartedClick}
               >
                 Introduction
+              </button>
+              <button
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors mt-2 text-zinc-400 hover:text-white hover:bg-zinc-800`}
+                onClick={typeof onStatusCodesClick === 'function' ? onStatusCodesClick : undefined}
+              >
+                Status Codes
               </button>
             </div>
 
