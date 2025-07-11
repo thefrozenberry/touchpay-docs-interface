@@ -8,6 +8,7 @@ import { Header } from "@/components/header"
 import { MobileRestriction } from "@/components/mobile-restriction"
 import { useEffect, useState } from "react"
 import { fetchApiDoc, type ApiDoc, API_BASE_URL } from "@/lib/api"
+import React from "react"
 
 type StatusCode = {
   code: number;
@@ -88,6 +89,29 @@ function ContentSkeleton() {
       </div>
     </div>
   )
+}
+
+// Utility: Render code/JSON with // comments highlighted in orange
+function JsonWithComments({ code, className }: { code: string, className?: string }) {
+  // Split code into lines
+  return (
+    <pre className={className} style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+      {code.split(/\r?\n/).map((line, idx) => {
+        // Find // comment in the line
+        const commentIdx = line.indexOf("//");
+        if (commentIdx !== -1) {
+          return (
+            <div key={idx}>
+              <span>{line.slice(0, commentIdx)}</span>
+              <span style={{ color: "orange" }}>{line.slice(commentIdx)}</span>
+            </div>
+          );
+        } else {
+          return <div key={idx}>{line}</div>;
+        }
+      })}
+    </pre>
+  );
 }
 
 export default function Home() {
@@ -342,27 +366,30 @@ export default function Home() {
             {selectedApi.request_body && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-white mb-4">Request Body</h3>
-                <pre className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-zinc-300 font-mono overflow-x-auto">
-                  {JSON.stringify(selectedApi.request_body, null, 2)}
-                </pre>
+                <JsonWithComments
+                  code={typeof selectedApi.request_body === 'string' ? selectedApi.request_body : JSON.stringify(selectedApi.request_body, null, 2)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-zinc-300 font-mono overflow-x-auto"
+                />
               </div>
             )}
             {/* Request Body Schema */}
             {selectedApi.request_body_schema && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-white mb-4">Request Body Schema</h3>
-                <pre className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-indigo-300 font-mono overflow-x-auto">
-                  {JSON.stringify(selectedApi.request_body_schema, null, 2)}
-                </pre>
+                <JsonWithComments
+                  code={typeof selectedApi.request_body_schema === 'string' ? selectedApi.request_body_schema : JSON.stringify(selectedApi.request_body_schema, null, 2)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-indigo-300 font-mono overflow-x-auto"
+                />
               </div>
             )}
             {/* Response Body */}
             {selectedApi.response_body && (
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-white mb-4">Response Body</h3>
-                <pre className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-green-400 font-mono overflow-x-auto">
-                  {JSON.stringify(selectedApi.response_body, null, 2)}
-                </pre>
+                <JsonWithComments
+                  code={typeof selectedApi.response_body === 'string' ? selectedApi.response_body : JSON.stringify(selectedApi.response_body, null, 2)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-green-400 font-mono overflow-x-auto"
+                />
               </div>
             )}
             {/* Token and Role Section */}
