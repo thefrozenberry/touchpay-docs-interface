@@ -1,0 +1,24 @@
+/* Add vertical spacing between paragraphs and block elements in the rich description */
+.description-rich-text p {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+/* Ensure empty paragraphs (from multiple Enters) show as visible space */
+.description-rich-text p:empty {
+  min-height: 1.5em;
+  display: block;
+}
+.description-rich-text ul,
+.description-rich-text ol {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  padding-left: 2em;
+}
+.description-rich-text hr {
+  margin: 1.5em 0;
+}
+.description-rich-text br {
+  display: block;
+  margin: 0.7em 0;
+  content: "";
+} 

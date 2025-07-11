@@ -9,6 +9,7 @@ import { MobileRestriction } from "@/components/mobile-restriction"
 import { useEffect, useState } from "react"
 import { fetchApiDoc, type ApiDoc, API_BASE_URL } from "@/lib/api"
 import React from "react"
+import "./description-rich.css"
 
 type StatusCode = {
   code: number;
@@ -328,11 +329,10 @@ export default function Home() {
                   {selectedApi.api_title}
                 </h1>
                 <div className="text-zinc-400 text-sm leading-relaxed">
-                  {selectedApi.description.split('\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4 last:mb-0">
-                      {paragraph}
-                    </p>
-                  ))}
+                  <div
+                    className="mb-4 last:mb-0 description-rich-text"
+                    dangerouslySetInnerHTML={{ __html: selectedApi.description }}
+                  />
                 </div>
               </div>
               <button

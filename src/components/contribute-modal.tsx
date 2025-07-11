@@ -5,6 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { X, Plus, Trash2, Save, Loader2 } from "lucide-react"
 import { createApiDoc, type ApiDoc } from "@/lib/api"
+// Tiptap imports
+import { EditorContent, useEditor } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import { Editor } from '@tiptap/react'
+import TextStyle from '@tiptap/extension-text-style'
+import Color from '@tiptap/extension-color'
+import Underline from '@tiptap/extension-underline'
+import ListItem from '@tiptap/extension-list-item'
 
 interface ContributeModalProps {
   isOpen: boolean
@@ -43,6 +51,29 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Tiptap editor instance for description
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TextStyle,
+      Color,
+      Underline,
+      ListItem,
+    ],
+    content: formData.description || '',
+    onUpdate: ({ editor }) => {
+      setFormData(prev => ({ ...prev, description: editor.getHTML() }))
+      if (errors.description) {
+        setErrors(prev => ({ ...prev, description: "" }))
+      }
+    },
+    editorProps: {
+      attributes: {
+        class: 'min-h-[120px] w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500',
+      },
+    },
+  })
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -317,13 +348,24 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
 
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-2">Full Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={4}
-                className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Detailed description of the API functionality..."
-              />
+              {/* Tiptap Editor Toolbar */}
+              <div className="mb-2 flex gap-2 flex-wrap">
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().toggleBold().run()}><b>B</b></Button>
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().toggleItalic().run()}><i>I</i></Button>
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().toggleStrike().run()}><s>S</s></Button>
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().setUnderline().run()}><u>U</u></Button>
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>H2</Button>
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().toggleBulletList().run()}>• List</Button>
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().toggleOrderedList().run()}>1. List</Button>
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().setHorizontalRule().run()}>─</Button>
+                {/* Color buttons: default (reset), white, indigo, orange, green */}
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().unsetColor().run()}>Default</Button>
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().setColor('#ffffff').run()} style={{ color: '#fff', background: '#222' }}>A</Button>
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().setColor('#6366f1').run()} style={{ color: '#6366f1' }}>A</Button>
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().setColor('orange').run()} style={{ color: 'orange' }}>A</Button>
+                <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().setColor('#22c55e').run()} style={{ color: '#22c55e' }}>A</Button>
+              </div>
+              <EditorContent editor={editor} />
               {errors.description && <p className="text-red-400 text-sm mt-1">{errors.description}</p>}
             </div>
           </div>
