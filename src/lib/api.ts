@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://popcorn.touchpay.one/';
+const API_BASE_URL = 'https://popcorn.touchpay.one';
 
 export interface ApiItem {
   _id: string;
