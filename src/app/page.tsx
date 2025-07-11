@@ -347,6 +347,15 @@ export default function Home() {
                 </pre>
               </div>
             )}
+            {/* Request Body Schema */}
+            {selectedApi.request_body_schema && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-white mb-4">Request Body Schema</h3>
+                <pre className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-indigo-300 font-mono overflow-x-auto">
+                  {JSON.stringify(selectedApi.request_body_schema, null, 2)}
+                </pre>
+              </div>
+            )}
             {/* Response Body */}
             {selectedApi.response_body && (
               <div className="mb-8">
@@ -356,6 +365,20 @@ export default function Home() {
                 </pre>
               </div>
             )}
+            {/* Token and Role Section */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-white mb-4">Token & Role</h3>
+              <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 flex flex-col md:flex-row gap-6">
+                <div>
+                  <span className="text-zinc-400 font-medium mr-2">Access Token:</span>
+                  <span className="text-blue-400 font-mono">{selectedApi.accessToken}</span>
+                </div>
+                <div>
+                  <span className="text-zinc-400 font-medium mr-2">Access Role:</span>
+                  <span className="text-green-400 font-mono">{selectedApi.accessRole}</span>
+                </div>
+              </div>
+            </div>
             {/* Path Parameters */}
             {selectedApi.path_parameters && selectedApi.path_parameters.length > 0 && (
               <div>
