@@ -13,6 +13,65 @@ import TextStyle from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import Underline from '@tiptap/extension-underline'
 import ListItem from '@tiptap/extension-list-item'
+import { Extension } from '@tiptap/core'
+
+// Custom extension for handling Enter key behavior
+const CustomEnterKey = Extension.create({
+  name: 'customEnterKey',
+  
+  addKeyboardShortcuts() {
+    return {
+      'Enter': () => {
+        const { editor } = this
+        const { state } = editor
+        const { selection } = state
+        
+        // Check if we're in a list
+        const { $from } = selection
+        const listItem = $from.parent.type.name === 'listItem'
+        
+        if (listItem) {
+          // In lists, use default behavior
+          return false
+        }
+        
+        // Check if we're at the end of a line that already has a line break
+        const { $from: $pos } = selection
+        const textBefore = $pos.parent.textContent.slice(0, $pos.parentOffset)
+        const lastChar = textBefore.slice(-1)
+        
+        // If we're at the end of a line that already has content, add double line break
+        if (textBefore.trim() !== '') {
+          editor.commands.insertContent('<br><br>')
+        } else {
+          // If we're at an empty line, just add one more line break
+          editor.commands.insertContent('<br>')
+        }
+        
+        return true
+      },
+      
+      'Shift-Enter': () => {
+        const { editor } = this
+        const { state } = editor
+        const { selection } = state
+        
+        // Check if we're in a list
+        const { $from } = selection
+        const listItem = $from.parent.type.name === 'listItem'
+        
+        if (listItem) {
+          // In lists, use default behavior
+          return false
+        }
+        
+        // Insert single line break
+        editor.commands.insertContent('<br>')
+        return true
+      },
+    }
+  },
+})
 
 interface ContributeModalProps {
   isOpen: boolean
@@ -60,6 +119,7 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
       Color,
       Underline,
       ListItem,
+      CustomEnterKey,
     ],
     content: formData.description || '',
     onUpdate: ({ editor }) => {
@@ -348,6 +408,10 @@ export function ContributeModal({ isOpen, onClose, onSuccess }: ContributeModalP
 
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-2">Full Description</label>
+              <p className="text-xs text-zinc-400 mb-2">
+                💡 <strong>Line Break Tips:</strong> Press <kbd className="px-1 py-0.5 bg-zinc-700 rounded text-xs">Enter</kbd> for double line break, 
+                <kbd className="px-1 py-0.5 bg-zinc-700 rounded text-xs ml-1">Shift + Enter</kbd> for single line break
+              </p>
               {/* Tiptap Editor Toolbar */}
               <div className="mb-2 flex gap-2 flex-wrap">
                 <Button type="button" size="sm" variant="outline" className="px-2 py-1" onClick={() => editor?.chain().focus().toggleBold().run()}><b>B</b></Button>

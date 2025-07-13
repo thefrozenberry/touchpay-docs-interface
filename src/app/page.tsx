@@ -3,6 +3,7 @@
 
 import { Card } from "@/components/ui/card"
 import { Copy, Info, Check, Shield, Database, Zap, Users, CreditCard, FileText, Settings, Trash2 } from "lucide-react"
+
 import { AppSidebar } from "@/components/app-sidebar"
 import { Header } from "@/components/header"
 import { MobileRestriction } from "@/components/mobile-restriction"
@@ -18,79 +19,6 @@ type StatusCode = {
   description: string;
 };
 
-// Skeleton Loading Component
-function ContentSkeleton() {
-  return (
-    <div className="max-w-4xl">
-      {/* Header Skeleton */}
-      <div className="mb-8">
-        <div className="h-9 bg-zinc-700 rounded mb-4 animate-pulse"></div>
-        <div className="space-y-2">
-          <div className="h-6 bg-zinc-700 rounded animate-pulse"></div>
-          <div className="h-6 bg-zinc-700 rounded w-3/4 animate-pulse"></div>
-        </div>
-      </div>
-
-      {/* Endpoints Section Skeleton */}
-      <div className="mb-8">
-        <div className="h-6 bg-zinc-700 rounded mb-4 animate-pulse"></div>
-        <div className="h-5 bg-zinc-700 rounded mb-6 w-2/3 animate-pulse"></div>
-        
-        {/* API Endpoint Skeleton */}
-        <div className="bg-zinc-800 rounded-lg p-4 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-6 w-16 bg-zinc-700 rounded animate-pulse"></div>
-            <div className="h-5 w-48 bg-zinc-700 rounded animate-pulse"></div>
-          </div>
-          <div className="h-8 w-8 bg-zinc-700 rounded animate-pulse"></div>
-        </div>
-      </div>
-
-      {/* Request Body Skeleton */}
-      <div className="mb-8">
-        <div className="h-6 bg-zinc-700 rounded mb-4 animate-pulse"></div>
-        
-        <div className="bg-zinc-800 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="h-8 w-12 bg-zinc-700 rounded animate-pulse"></div>
-            <div className="h-8 w-16 bg-zinc-700 rounded animate-pulse"></div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="h-4 bg-zinc-700 rounded animate-pulse"></div>
-            <div className="h-4 bg-zinc-700 rounded w-5/6 animate-pulse"></div>
-            <div className="h-4 bg-zinc-700 rounded w-4/5 animate-pulse"></div>
-            <div className="h-4 bg-zinc-700 rounded w-3/4 animate-pulse"></div>
-            <div className="h-4 bg-zinc-700 rounded w-2/3 animate-pulse"></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Path Parameters Skeleton */}
-      <div>
-        <div className="h-6 bg-zinc-700 rounded mb-4 animate-pulse"></div>
-        <Card className="bg-zinc-800 border-zinc-700">
-          <div className="p-4">
-            <div className="space-y-3">
-              <div className="flex gap-4">
-                <div className="h-4 bg-zinc-700 rounded w-20 animate-pulse"></div>
-                <div className="h-4 bg-zinc-700 rounded w-16 animate-pulse"></div>
-                <div className="h-4 bg-zinc-700 rounded w-20 animate-pulse"></div>
-                <div className="h-4 bg-zinc-700 rounded w-32 animate-pulse"></div>
-              </div>
-              <div className="flex gap-4">
-                <div className="h-4 bg-zinc-700 rounded w-24 animate-pulse"></div>
-                <div className="h-4 bg-zinc-700 rounded w-16 animate-pulse"></div>
-                <div className="h-4 bg-zinc-700 rounded w-12 animate-pulse"></div>
-                <div className="h-4 bg-zinc-700 rounded w-40 animate-pulse"></div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    </div>
-  )
-}
 
 // Utility: Render code/JSON with // comments highlighted in orange
 function JsonWithComments({ code, className }: { code: string, className?: string }) {
@@ -115,6 +43,407 @@ function JsonWithComments({ code, className }: { code: string, className?: strin
   );
 }
 
+// Dynamic API Content Renderer
+function ApiContentRenderer({ api, onDeleteApi }: { api: ApiDoc; onDeleteApi: () => void }) {
+  const isGetMethod = api.method === 'GET';
+  const isPostMethod = api.method === 'POST';
+  const isDeleteMethod = api.method === 'DELETE';
+  const isPutMethod = api.method === 'PUT';
+  const isPatchMethod = api.method === 'PATCH';
+  
+  const isAuthRelated = api.subtitle.toLowerCase().includes('auth') || api.subtitle.toLowerCase().includes('login');
+  const isPaymentRelated = api.subtitle.toLowerCase().includes('payment') || api.subtitle.toLowerCase().includes('transaction');
+  const isUserRelated = api.subtitle.toLowerCase().includes('user') || api.subtitle.toLowerCase().includes('profile');
+  const isWalletRelated = api.subtitle.toLowerCase().includes('wallet') || api.subtitle.toLowerCase().includes('balance');
+  const isKycRelated = api.subtitle.toLowerCase().includes('kyc') || api.subtitle.toLowerCase().includes('verification');
+
+  // Method-specific color schemes
+  const getMethodColors = () => {
+    if (isGetMethod) return { bg: 'bg-green-600', text: 'text-green-400', border: 'border-green-600' };
+    if (isPostMethod) return { bg: 'bg-blue-600', text: 'text-blue-400', border: 'border-blue-600' };
+    if (isDeleteMethod) return { bg: 'bg-red-600', text: 'text-red-400', border: 'border-red-600' };
+    if (isPutMethod) return { bg: 'bg-orange-600', text: 'text-orange-400', border: 'border-orange-600' };
+    if (isPatchMethod) return { bg: 'bg-purple-600', text: 'text-purple-400', border: 'border-purple-600' };
+    return { bg: 'bg-zinc-600', text: 'text-zinc-400', border: 'border-zinc-600' };
+  };
+
+  const colors = getMethodColors();
+
+  // Layout variations based on API characteristics
+  const getLayoutVariant = () => {
+    if (isAuthRelated) return 'auth';
+    if (isPaymentRelated) return 'payment';
+    if (isUserRelated) return 'user';
+    if (isWalletRelated) return 'wallet';
+    if (isKycRelated) return 'kyc';
+    return 'default';
+  };
+
+  const layoutVariant = getLayoutVariant();
+
+  return (
+    <div className="max-w-6xl">
+      {/* Header Section with Dynamic Styling */}
+      <div className={`mb-8 p-6 rounded-xl border ${colors.border} bg-gradient-to-r from-zinc-800/50 to-zinc-900/50`}>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-4">
+              <span className={`${colors.bg} text-white px-3 py-1 rounded font-mono text-sm font-semibold`}>
+                {api.method}
+              </span>
+              <span className="text-zinc-400 text-sm">{api.subtitle}</span>
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-4">{api.api_title}</h1>
+            <div className="text-zinc-300 text-sm leading-relaxed">
+              <div
+                className="description-rich-text"
+                dangerouslySetInnerHTML={{ __html: api.description }}
+              />
+            </div>
+          </div>
+                     <button
+             onClick={onDeleteApi}
+             title="Delete API"
+             className="p-2 rounded-full bg-transparent hover:bg-red-600/20 text-zinc-400 hover:text-red-600 transition-colors"
+           >
+             <Trash2 className="w-6 h-6" />
+           </button>
+        </div>
+      </div>
+
+      {/* Dynamic Layout Based on API Type */}
+      {layoutVariant === 'auth' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Left Column - Endpoint */}
+          <div className="space-y-6">
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-blue-400" />
+                Authentication Endpoint
+              </h2>
+              <div className="text-zinc-400 text-sm mb-4">
+                {api.endpoint_description.split('\n').map((paragraph, index) => (
+                  <p key={index} className="mb-2 last:mb-0">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+              <div className="bg-zinc-900 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className={`${colors.bg} text-white px-3 py-1 rounded font-mono text-sm`}>
+                    {api.method}
+                  </span>
+                  <code className="text-zinc-300 font-mono">{api.endpoint}</code>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Token & Role */}
+          <div className="space-y-6">
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-green-400" />
+                Access Control
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded">
+                  <span className="text-zinc-400 font-medium">Access Token:</span>
+                  <span className="text-blue-400 font-mono">{api.accessToken}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded">
+                  <span className="text-zinc-400 font-medium">Access Role:</span>
+                  <span className="text-green-400 font-mono">{api.accessRole}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {layoutVariant === 'payment' && (
+        <div className="space-y-8">
+          {/* Payment-specific header */}
+          <div className="bg-gradient-to-r from-green-800/20 to-emerald-800/20 border border-green-700/30 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-xl font-semibold text-white">Payment Processing</h2>
+            </div>
+            <div className="text-zinc-300 text-sm">
+              {api.endpoint_description.split('\n').map((paragraph, index) => (
+                <p key={index} className="mb-2 last:mb-0">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          {/* Endpoint with enhanced styling */}
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Transaction Endpoint</h3>
+            <div className="bg-zinc-900 rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className={`${colors.bg} text-white px-3 py-1 rounded font-mono text-sm`}>
+                  {api.method}
+                </span>
+                <code className="text-zinc-300 font-mono">{api.endpoint}</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {layoutVariant === 'wallet' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Wallet Balance Section */}
+          <div className="lg:col-span-2">
+            <div className="bg-gradient-to-r from-blue-800/20 to-cyan-800/20 border border-blue-700/30 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
+                  <Database className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-xl font-semibold text-white">Wallet Operations</h2>
+              </div>
+              <div className="text-zinc-300 text-sm mb-4">
+                {api.endpoint_description.split('\n').map((paragraph, index) => (
+                  <p key={index} className="mb-2 last:mb-0">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+              <div className="bg-zinc-900 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className={`${colors.bg} text-white px-3 py-1 rounded font-mono text-sm`}>
+                    {api.method}
+                  </span>
+                  <code className="text-zinc-300 font-mono">{api.endpoint}</code>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Access Control */}
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Access Control</h3>
+            <div className="space-y-3">
+              <div className="p-3 bg-zinc-900 rounded">
+                <span className="text-zinc-400 text-sm">Token:</span>
+                <div className="text-blue-400 font-mono text-sm mt-1">{api.accessToken}</div>
+              </div>
+              <div className="p-3 bg-zinc-900 rounded">
+                <span className="text-zinc-400 text-sm">Role:</span>
+                <div className="text-green-400 font-mono text-sm mt-1">{api.accessRole}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {layoutVariant === 'user' && (
+        <div className="space-y-8">
+          {/* User Profile Header */}
+          <div className="bg-gradient-to-r from-purple-800/20 to-pink-800/20 border border-purple-700/30 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-xl font-semibold text-white">User Management</h2>
+            </div>
+            <div className="text-zinc-300 text-sm">
+              {api.endpoint_description.split('\n').map((paragraph, index) => (
+                <p key={index} className="mb-2 last:mb-0">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          {/* Endpoint and Access */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">API Endpoint</h3>
+              <div className="bg-zinc-900 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className={`${colors.bg} text-white px-3 py-1 rounded font-mono text-sm`}>
+                    {api.method}
+                  </span>
+                  <code className="text-zinc-300 font-mono">{api.endpoint}</code>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Permissions</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded">
+                  <span className="text-zinc-400 text-sm">Token:</span>
+                  <span className="text-blue-400 font-mono text-sm">{api.accessToken}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded">
+                  <span className="text-zinc-400 text-sm">Role:</span>
+                  <span className="text-green-400 font-mono text-sm">{api.accessRole}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {layoutVariant === 'kyc' && (
+        <div className="space-y-8">
+          {/* KYC Verification Header */}
+          <div className="bg-gradient-to-r from-orange-800/20 to-red-800/20 border border-orange-700/30 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-xl font-semibold text-white">KYC Verification</h2>
+            </div>
+            <div className="text-zinc-300 text-sm">
+              {api.endpoint_description.split('\n').map((paragraph, index) => (
+                <p key={index} className="mb-2 last:mb-0">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          {/* Endpoint and Security */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Verification Endpoint</h3>
+              <div className="bg-zinc-900 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className={`${colors.bg} text-white px-3 py-1 rounded font-mono text-sm`}>
+                    {api.method}
+                  </span>
+                  <code className="text-zinc-300 font-mono">{api.endpoint}</code>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Security Requirements</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded">
+                  <span className="text-zinc-400 text-sm">Token:</span>
+                  <span className="text-blue-400 font-mono text-sm">{api.accessToken}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-zinc-900 rounded">
+                  <span className="text-zinc-400 text-sm">Role:</span>
+                  <span className="text-green-400 font-mono text-sm">{api.accessRole}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Default Layout for other APIs */}
+      {layoutVariant === 'default' && (
+        <div className="space-y-8">
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Endpoint</h2>
+            <div className="text-zinc-400 text-sm mb-6">
+              {api.endpoint_description.split('\n').map((paragraph, index) => (
+                <p key={index} className="mb-2 last:mb-0">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+            <div className="bg-zinc-900 rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className={`${colors.bg} text-white px-3 py-1 rounded font-mono text-sm`}>
+                  {api.method}
+                </span>
+                <code className="text-zinc-300 font-mono">{api.endpoint}</code>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Access Control</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-3 bg-zinc-900 rounded">
+                <span className="text-zinc-400 text-sm">Access Token:</span>
+                <div className="text-blue-400 font-mono text-sm mt-1">{api.accessToken}</div>
+              </div>
+              <div className="p-3 bg-zinc-900 rounded">
+                <span className="text-zinc-400 text-sm">Access Role:</span>
+                <div className="text-green-400 font-mono text-sm mt-1">{api.accessRole}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Request Body */}
+      {api.request_body && (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-white mb-4 mt-10">Request Body</h3>
+          <JsonWithComments
+            code={typeof api.request_body === 'string' ? api.request_body : JSON.stringify(api.request_body, null, 2)}
+            className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-zinc-300 font-mono overflow-x-auto"
+          />
+        </div>
+      )}
+
+      {/* Request Body Schema */}
+      {api.request_body_schema && (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-white mb-4">Request Body Schema</h3>
+          <JsonWithComments
+            code={typeof api.request_body_schema === 'string' ? api.request_body_schema : JSON.stringify(api.request_body_schema, null, 2)}
+            className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-indigo-300 font-mono overflow-x-auto"
+          />
+        </div>
+      )}
+
+      {/* Response Body */}
+      {api.response_body && (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-white mb-4">Response Body</h3>
+          <JsonWithComments
+            code={typeof api.response_body === 'string' ? api.response_body : JSON.stringify(api.response_body, null, 2)}
+            className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-green-400 font-mono overflow-x-auto"
+          />
+        </div>
+      )}
+
+      {/* Path Parameters */}
+      {api.path_parameters && api.path_parameters.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-4">Path Parameters</h3>
+          <div className="bg-zinc-800 border-zinc-700 rounded-lg p-4">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr>
+                  <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Name</th>
+                  <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Type</th>
+                  <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Required</th>
+                  <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {api.path_parameters.map((param, idx) => (
+                  <tr key={idx} className="transition-colors hover:bg-zinc-700">
+                    <td className="px-3 py-2 text-sm text-white">{param.name}</td>
+                    <td className="px-3 py-2 text-sm text-zinc-300">{param.type}</td>
+                    <td className="px-3 py-2 text-sm text-zinc-300">{param.required ? "Yes" : "No"}</td>
+                    <td className="px-3 py-2 text-sm text-zinc-300">{param.description}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   const [selectedApi, setSelectedApi] = useState<ApiDoc | null>(null)
   const [selectedApiId, setSelectedApiId] = useState<string | null>(null)
@@ -127,6 +456,8 @@ export default function Home() {
   const [showStatusCodes, setShowStatusCodes] = useState(false);
   const [statusCodes, setStatusCodes] = useState<StatusCode[]>([]);
   const [loadingStatusCodes, setLoadingStatusCodes] = useState(false);
+  // Static time labels to prevent flickering
+
 
   const handleApiSelect = async (apiId: string) => {
     console.log('handleApiSelect called with:', apiId);
@@ -233,13 +564,14 @@ export default function Home() {
         isGetStartedOpen={isGetStartedOpen}
         refreshTrigger={sidebarRefreshTrigger}
         onStatusCodesClick={handleStatusCodesClick}
+        isStatusCodesOpen={showStatusCodes}
       />
 
       {/* Main Content with left margin for fixed sidebar */}
       <div className="flex-1 ml-64 p-8 pt-10" style={{ backgroundColor: "#0D0E0F" }}>
         {showStatusCodes ? (
-          <div className="max-w-2xl mx-auto">
-            <h1 className="text-2xl font-bold text-white mb-6 text-left">HTTP Status Codes</h1>
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-2xl font-bold text-white mb-6 text-left mt-10">HTTP Status Codes</h1>
             {loadingStatusCodes ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -320,132 +652,21 @@ export default function Home() {
               </div>
             )}
           </div>
-        ) : selectedApi ? (
-          <div className="max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="mb-8 flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-white mb-4">
-                  {selectedApi.api_title}
-                </h1>
-                <div className="text-zinc-400 text-sm leading-relaxed">
-                  <div
-                    className="mb-4 last:mb-0 description-rich-text"
-                    dangerouslySetInnerHTML={{ __html: selectedApi.description }}
-                  />
-                </div>
-              </div>
-              <button
-                onClick={handleDeleteApi}
-                title="Delete API"
-                className="mt-1 p-2 rounded-full bg-transparent hover:bg-red-600/20 text-zinc-400 hover:text-red-600 transition-colors"
-              >
-                <Trash2 className="w-6 h-6" />
-              </button>
-            </div>
-            {/* Endpoint Section */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-white mb-4">Endpoint</h2>
-              <div className="text-zinc-400 text-sm mb-6">
-                {selectedApi.endpoint_description.split('\n').map((paragraph, index) => (
-                  <p key={index} className="mb-2 last:mb-0">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-              <div className="bg-zinc-800 rounded-lg p-4 mb-6 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="bg-zinc-600 text-white px-3 py-1 rounded font-mono text-sm">
-                    {selectedApi.method}
-                  </span>
-                  <code className="text-zinc-300 font-mono">{selectedApi.endpoint}</code>
-                </div>
-              </div>
-            </div>
-            {/* Request Body */}
-            {selectedApi.request_body && (
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-white mb-4">Request Body</h3>
-                <JsonWithComments
-                  code={typeof selectedApi.request_body === 'string' ? selectedApi.request_body : JSON.stringify(selectedApi.request_body, null, 2)}
-                  className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-zinc-300 font-mono overflow-x-auto"
-                />
-              </div>
-            )}
-            {/* Request Body Schema */}
-            {selectedApi.request_body_schema && (
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-white mb-4">Request Body Schema</h3>
-                <JsonWithComments
-                  code={typeof selectedApi.request_body_schema === 'string' ? selectedApi.request_body_schema : JSON.stringify(selectedApi.request_body_schema, null, 2)}
-                  className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-indigo-300 font-mono overflow-x-auto"
-                />
-              </div>
-            )}
-            {/* Response Body */}
-            {selectedApi.response_body && (
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-white mb-4">Response Body</h3>
-                <JsonWithComments
-                  code={typeof selectedApi.response_body === 'string' ? selectedApi.response_body : JSON.stringify(selectedApi.response_body, null, 2)}
-                  className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 text-sm text-green-400 font-mono overflow-x-auto"
-                />
-              </div>
-            )}
-            {/* Token and Role Section */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold text-white mb-4">Token & Role</h3>
-              <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 flex flex-col md:flex-row gap-6">
-                <div>
-                  <span className="text-zinc-400 font-medium mr-2">Access Token:</span>
-                  <span className="text-blue-400 font-mono">{selectedApi.accessToken}</span>
-                </div>
-                <div>
-                  <span className="text-zinc-400 font-medium mr-2">Access Role:</span>
-                  <span className="text-green-400 font-mono">{selectedApi.accessRole}</span>
-                </div>
-              </div>
-            </div>
-            {/* Path Parameters */}
-            {selectedApi.path_parameters && selectedApi.path_parameters.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">Path Parameters</h3>
-                <div className="bg-zinc-800 border-zinc-700 rounded-lg p-4">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr>
-                        <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Name</th>
-                        <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Type</th>
-                        <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Required</th>
-                        <th className="px-3 py-2 text-sm font-semibold text-zinc-300 bg-zinc-700">Description</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedApi.path_parameters.map((param, idx) => (
-                        <tr key={idx} className="transition-colors hover:bg-zinc-700">
-                          <td className="px-3 py-2 text-sm text-white">{param.name}</td>
-                          <td className="px-3 py-2 text-sm text-zinc-300">{param.type}</td>
-                          <td className="px-3 py-2 text-sm text-zinc-300">{param.required ? "Yes" : "No"}</td>
-                          <td className="px-3 py-2 text-sm text-zinc-300">{param.description}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
+                  ) : selectedApi ? (
+            <ApiContentRenderer api={selectedApi} onDeleteApi={handleDeleteApi} />
+          ) : (
           <div className="max-w-6xl">
             {/* Hero Section */}
             <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold text-white mb-6 mt-16 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold text-white mb-6 mt-10 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 TouchPay Internal API Documentation
               </h1>
               <p className="text-zinc-300 text-xl leading-relaxed max-w-4xl mx-auto">
                 Welcome to the internal developer documentation for TouchPay's core APIs. This portal is intended for engineering teams building and maintaining our fintech infrastructure.
               </p>
             </div>
+
+
 
             {/* Features Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
